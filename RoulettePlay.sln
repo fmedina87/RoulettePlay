@@ -3,7 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.31313.79
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RoulettePlay", "RoulettePlay.csproj", "{1BC8AE76-226D-48DF-BF6F-3899685BD15D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RoulettePlay.Api", "RoulettePlay.Api.csproj", "{1BC8AE76-226D-48DF-BF6F-3899685BD15D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RoulettePlay.Entities", "..\Entities\RoulettePlay.Entities.csproj", "{773F333E-8725-4D7C-8D53-07AEB90C80F3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RoulettePlay.Services", "..\Businnes\RoulettePlay.Services.csproj", "{473DB93A-1866-4BAB-B920-681D1C053274}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +19,14 @@ Global
 		{1BC8AE76-226D-48DF-BF6F-3899685BD15D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1BC8AE76-226D-48DF-BF6F-3899685BD15D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1BC8AE76-226D-48DF-BF6F-3899685BD15D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{773F333E-8725-4D7C-8D53-07AEB90C80F3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{773F333E-8725-4D7C-8D53-07AEB90C80F3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{773F333E-8725-4D7C-8D53-07AEB90C80F3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{773F333E-8725-4D7C-8D53-07AEB90C80F3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{473DB93A-1866-4BAB-B920-681D1C053274}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{473DB93A-1866-4BAB-B920-681D1C053274}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{473DB93A-1866-4BAB-B920-681D1C053274}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{473DB93A-1866-4BAB-B920-681D1C053274}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
