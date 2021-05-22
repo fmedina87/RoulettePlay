@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "RoulettePlay.Entities": {
+      "commandName": "Project"
+    },
+    "Docker": {
+      "commandName": "Docker"
+    }
+  }
+}
