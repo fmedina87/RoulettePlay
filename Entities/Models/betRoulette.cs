@@ -15,7 +15,7 @@ namespace RoulettePlay.Entities.Models
         public string betRouletteColour { get; set; }
         public double betRouletteValue { get; set; }        
         public bool isWinner { get; set; }
-        public bool paidValue { get; set; }
+        public double paidValue { get; set; }
         public DateTime betCreationDate { get; set; }
         public string betUser { get; set; }
     }

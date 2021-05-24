@@ -7,6 +7,6 @@ namespace RoulettePlay.Services.Interfaces.Businnes.Actions
 {
     public interface IReadAll<T> where T : class
     {
-        Task<T> ReadAllsync();
+        Task<T> ReadAllAsync();
     }
 }

@@ -9,6 +9,6 @@ namespace RoulettePlay.Services.Interfaces.Businnes
 {
    public interface IopeningClousingRoulete : ICreate<openingClosingRoulette, int>, IReadbyId<openingClosingRoulette>
     {
-         Task<bool> openingClosingRouleteUpdate(int idRoulette);
+         Task<bool> openingClosingRouleteUpdate(int idRoulette, int idOpeningClosingRoulette);
     }
 }

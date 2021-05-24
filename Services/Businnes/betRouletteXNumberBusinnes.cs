@@ -1,6 +1,7 @@
 ﻿using RoulettePlay.Entities.Models;
 using RoulettePlay.Services.DataBase;
 using RoulettePlay.Services.Interfaces.Businnes;
+using RoulettePlay.Services.Interfaces.DataBase;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
@@ -9,8 +10,15 @@ using System.Threading.Tasks;
 
 namespace RoulettePlay.Services.Businnes
 {
-    public class betRouletteXNumberBusinnes: DBAcces, IbetRouletteXNumber
+    public class betRouletteXNumberBusinnes: DBCommand, IbetRouletteXNumber
     {
+        private IDBAcces _dbAcces;
+        public betRouletteXNumberBusinnes(IDBAcces dbAccess)
+        {
+            _context = dbAccess._context;
+            _transaction = dbAccess._transaction;
+            _dbAcces = dbAccess;
+        }
         #region Create
         /// <summary>
         /// this method creates the association bet to bet number
@@ -26,13 +34,12 @@ namespace RoulettePlay.Services.Businnes
                 string _Result = "";
                 Dictionary<string, object> lstParametros = new Dictionary<string, object>();
                 lstParametros.Add("@idBetRoulette", objRouletteXNumber.idBetRoulette);
-                lstParametros.Add("@BetRouletteColour", objRouletteXNumber.betRouletteNumber);
+                lstParametros.Add("@betRouletteNumber", objRouletteXNumber.betRouletteNumber);
                 lstParametros.Add("@createType", 1);
-                _Result = await commandExecuteDBAsync("SP_BETROULETTEXCOLOR_CREATE", lstParametros, new SqlParameter() { ParameterName = "@Result", Value = _Result });
+                _Result = await commandExecuteDBAsync("SP_BETROULETTEXNUMBER_CREATE", lstParametros, new SqlParameter() { ParameterName = "@Result", Value = _Result });
                 if (Convert.ToInt32(_Result) > 0)
                 {
                     idBetRouletteXNumber = Convert.ToInt32(_Result);
-                    SaveChange();
                 }
                 else
                 {
@@ -41,10 +48,8 @@ namespace RoulettePlay.Services.Businnes
             }
             catch (Exception ex)
             {
-                DiscardChange();
                 throw new Exception(string.Format("Se presentó un error  {0} al intentar crear la apuesta por número de la ruleta. ", ex.Message));
             }
-            finally { Dispose(); }
 
             return idBetRouletteXNumber;
         }

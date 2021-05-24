@@ -6,7 +6,7 @@ using System.Text;
 
 namespace RoulettePlay.Services.Interfaces.Businnes
 {
-    interface IbetRouletteXNumber: ICreate <betRouletteXNumber, int>
+    public interface IbetRouletteXNumber: ICreate <betRouletteXNumber, int>
     {
     }
 }

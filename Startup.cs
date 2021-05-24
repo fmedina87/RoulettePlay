@@ -6,6 +6,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using RoulettePlay.Services.Businnes;
+using RoulettePlay.Services.DataBase;
+using RoulettePlay.Services.Interfaces.Businnes;
+using RoulettePlay.Services.Interfaces.DataBase;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,7 +29,8 @@ namespace RoulettePlay
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllers();
+            services.AddControllers();       
+            services.AddScoped<IDBAcces, DBAcces>();        
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
