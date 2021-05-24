@@ -1,4 +1,5 @@
-﻿using RoulettePlay.Services.Businnes;
+﻿using Microsoft.Extensions.Configuration;
+using RoulettePlay.Services.Businnes;
 using RoulettePlay.Services.Interfaces.Businnes;
 using RoulettePlay.Services.Interfaces.DataBase;
 using System;
@@ -12,12 +13,14 @@ namespace RoulettePlay.Services.DataBase
     {
         public SqlConnection _context { get; set; }
         public SqlTransaction _transaction { get; set; }
-        public IServicesRepository _repository { get; set; }
-        public DBAcces()
+        public IServicesRepository _repository { get; set; }   
+        public IConfiguration _Configuration { get; }
+        public DBAcces(IConfiguration config)
         {
             try
             {
-                _context = openConnection();
+                _Configuration = config;
+                 _context = openConnection();
                 _transaction = _context.BeginTransaction();
                 _repository = new servicesRepository(this);
             }
@@ -28,13 +31,34 @@ namespace RoulettePlay.Services.DataBase
            
         }
         /// <summary>
+        /// get the connection string from the api config
+        /// </summary>
+        /// <returns></returns>
+        private string getConnectionString()
+        {
+            string connectionString = string.Empty;
+            try
+            {
+                connectionString = _Configuration.GetConnectionString("SqlConnectionString");
+                if (string.IsNullOrEmpty(connectionString))
+                {
+                    throw new Exception("Se presentó un problema al obtener la cadena de conexión. Por favor verique el archivo de configuración.");
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+            return connectionString;
+        }
+        /// <summary>
         /// Open connection
         /// </summary>
         private SqlConnection openConnection()
         {
             try
             {
-                var connectionString = @"Data Source=aquiles\cisa;Initial Catalog=ROULETTETEST;Persist Security Info=True;User ID=desarrollo;Password=D3s@rr0ll02020+.";
+                string connectionString = getConnectionString();
                 var context = new SqlConnection(connectionString);
                 context.Open();
                 return context;
