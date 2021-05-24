@@ -1,112 +1,108 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using RoulettePlay.Services.Businnes;
+using RoulettePlay.Services.Interfaces.Businnes;
+using RoulettePlay.Services.Interfaces.DataBase;
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Data.SqlClient;
-using System.Threading.Tasks;
+using System.Text;
 
 namespace RoulettePlay.Services.DataBase
 {
-    public abstract class DBAcces
+   public class DBAcces: IDBAcces
     {
-
-        private SqlConnection _context { get; set; }
-        private SqlTransaction _transaction { get; set; }        
-       
-        private void openConnection()
+        public SqlConnection _context { get; set; }
+        public SqlTransaction _transaction { get; set; }
+        public IServicesRepository _repository { get; set; }
+        public DBAcces()
         {
-            var connectionString = @"Server=localhost\SQLEXPRESS;Database=ROULETTETEST;Trusted_Connection=True;";
-            _context= new SqlConnection(connectionString);
-            _context.Open();
-            _transaction = _context.BeginTransaction();
+            try
+            {
+                _context = openConnection();
+                _transaction = _context.BeginTransaction();
+                _repository = new servicesRepository(this);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+           
         }
-
+        /// <summary>
+        /// Open connection
+        /// </summary>
+        private SqlConnection openConnection()
+        {
+            try
+            {
+                var connectionString = @"Data Source=aquiles\cisa;Initial Catalog=ROULETTETEST;Persist Security Info=True;User ID=desarrollo;Password=D3s@rr0ll02020+.";
+                var context = new SqlConnection(connectionString);
+                context.Open();
+                return context;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+        /// <summary>
+        /// Dispose resources of conection DB
+        /// </summary>
         public void Dispose()
         {
-            if (_transaction != null)
+            try
             {
-                _transaction.Dispose();
+                if (_transaction != null)
+                {
+                    _transaction.Dispose();
+                }
+                if (_transaction != null)
+                {
+                    _context.Close();
+                    _context.Dispose();
+                }
             }
-            if (_transaction != null)
+            catch (Exception)
             {
-                _context.Close();
-                _context.Dispose();
-            }            
+                throw;
+            }
         }
-
+        /// <summary>
+        /// Commit transaction
+        /// </summary>
         public void SaveChange()
         {
-            _transaction.Commit();            
+            try
+            {
+                if (_transaction != null)
+                {
+                    _transaction.Commit();
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
         }
+        /// <summary>
+        /// discard changes 
+        /// </summary>
         public void DiscardChange()
         {
-            _transaction.Rollback();
-        }
-        /// <summary>
-        /// function used for return result value for update or create
-        /// </summary>
-        /// <param name="spName">stored procedure name</param>
-        /// <param name="lstInputParameters">store procedure parameter</param>
-        /// <param name="outPutParameter">out put parameter</param>
-        /// <returns></returns>
-        public async Task<string> commandExecuteDBAsync(string spName, Dictionary<string, object> lstInputParameters, SqlParameter outPutParameter)
-        {
-            string valorParametroSalida = string.Empty;
             try
             {
-                openConnection();
-                SqlCommand comando = new SqlCommand { CommandType = CommandType.StoredProcedure, CommandText = spName, Connection = _context, Transaction = _transaction };
-                if (lstInputParameters.Count > 0)
+                if (_transaction != null)
                 {
-                    foreach (var item in lstInputParameters)
-                    {
-                        comando.Parameters.Add(new SqlParameter() { ParameterName = item.Key, Value = item.Value, IsNullable = true });
-                    }
+                    _transaction.Rollback();
                 }
-                outPutParameter.Direction = ParameterDirection.Output;
-                outPutParameter.IsNullable = true;
-                comando.Parameters.Add(outPutParameter);                
-                try
-                {
-                    var reader = await comando.ExecuteNonQueryAsync();
-                    valorParametroSalida = Convert.ToString(comando.Parameters[outPutParameter.ParameterName].Value);
-                }
-                catch (System.Exception ex)
-                {
-                    throw ex;
-                }                
             }
-            catch (Exception ex)
-            { throw ex; }
-            return valorParametroSalida;
+            catch (Exception)
+            {             
+            }
         }
-        /// <summary>
-        /// function used for return result value for update or create
-        /// </summary>
-        /// <param name="spName">stored procedure name</param>
-        /// <param name="lstInputParameters">store procedure parameter</param>
-        public async Task<DataTable> commandExecuteDBAsync(string spName, Dictionary<string, object> lstInputParameters)
+        ~DBAcces()
         {
-            var dt = new DataTable();
-            try
-            {
-                openConnection();
-                SqlCommand comando = new SqlCommand { CommandType = CommandType.StoredProcedure, CommandText = spName, Connection = _context, Transaction = _transaction };
-                if (lstInputParameters.Count > 0)
-                {
-                    foreach (var item in lstInputParameters)
-                    {
-                        comando.Parameters.Add(new SqlParameter() { ParameterName = item.Key, Value = item.Value, IsNullable = true });
-                    }
-                }
-                var reader = await comando.ExecuteReaderAsync();
-                dt.Load(reader);                
-                return dt;
-            }
-            catch (System.Exception ex)
-            {
-                throw ex;
-            }
+            Dispose();
         }
     }
 }

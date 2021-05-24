@@ -2,6 +2,7 @@
 using RoulettePlay.Services.DataBase;
 using RoulettePlay.Services.Interfaces.Businnes;
 using RoulettePlay.Services.Interfaces.Businnes.Actions;
+using RoulettePlay.Services.Interfaces.DataBase;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -10,10 +11,15 @@ using System.Linq;
 using System.Threading.Tasks;
 namespace RoulettePlay.Services.Businnes
 {
-    public class RouletteBusinnes : DBAcces, IRoulette
+    public class rouletteBusinnes : DBCommand, IRoulette
     {
-        public IbetRoulette _BetRoulette { get; }
-        public IopeningClousingRoulete _openingClousingRoulete { get; }
+        private IDBAcces _dbAcces { get; }
+        public rouletteBusinnes(IDBAcces dbAccess)
+        {
+            _context = dbAccess._context;
+            _transaction = dbAccess._transaction;
+            _dbAcces = dbAccess;
+        }
         #region "Actions"
         #region Create
         /// <summary>
@@ -32,7 +38,7 @@ namespace RoulettePlay.Services.Businnes
                 if (Convert.ToInt32(_Result) > 0)
                 {
                     idRoulette = Convert.ToInt32(_Result);
-                    SaveChange();
+                    _dbAcces.SaveChange();
                 }
                 else
                 {
@@ -41,13 +47,10 @@ namespace RoulettePlay.Services.Businnes
             }
             catch (Exception ex)
             {
-                DiscardChange();
+
                 throw new Exception(string.Format("Se presentó un error {0} al intentar crear la ruleta. ", ex.Message));
             }
-            finally
-            {
-                Dispose();
-            }
+
             return idRoulette;
         }
         #endregion
@@ -57,9 +60,9 @@ namespace RoulettePlay.Services.Businnes
         /// </summary>
         /// <param name="idRoulette">input parameter, is a roulette identifier for open</param>
         /// <returns>boolean value, indicates status of opennign roulette</returns>
-        public Task<bool> RouletteOpen(int idRoulette)
+        public async Task<bool> RouletteOpen(int idRoulette)
         {
-            Task<bool> isOpen = null;
+            bool isOpen = false;
             try
             {
                 if (ValidateRouletteStatus(idRoulette))
@@ -68,17 +71,19 @@ namespace RoulettePlay.Services.Businnes
                 }
                 else
                 {
-                    isOpen = UpdateRoulette(idRoulette, true);
-                    if (isOpen.Result)
+                    isOpen = await UpdateRoulette(idRoulette, true);
+                    if (isOpen)
                     {
                         openingClosingRoulette objopeningClosingRoulette = new openingClosingRoulette();
                         objopeningClosingRoulette.idRoulette = idRoulette;
-                        int idobjopeningClosingRoulette = _openingClousingRoulete.createAsync(objopeningClosingRoulette).Result;
+                        int Res = await _dbAcces._repository.openingClousingRoulete.createAsync(objopeningClosingRoulette);
+                        _dbAcces.SaveChange();
                     }
                 }
             }
             catch (Exception ex)
             {
+                _dbAcces.DiscardChange();
                 throw new Exception(string.Format("Se presentó un error {0} al intentar abrir la ruleta. ", ex.Message));
             }
 
@@ -89,14 +94,22 @@ namespace RoulettePlay.Services.Businnes
         /// </summary>
         /// <param name="idRoulette">input parameter, is a roulette identifier for close</param>
         /// <returns>list of bet for roulette</returns>
-        public Task<bool> RouletteClose(int idRoulette)
+        public async Task<List<betRoulette>> RouletteClose(int idRoulette)
         {
-            Task<bool> isOpen = null;
+            List<betRoulette> lstbetRoulette = null;
             try
             {
                 if (ValidateRouletteStatus(idRoulette))
                 {
-                    isOpen = UpdateRoulette(idRoulette, false);
+                    int idOpeningClosingRoulette = getOpenigHandle(idRoulette);
+
+                    await _dbAcces._repository.openingClousingRoulete.openingClosingRouleteUpdate(idRoulette, idOpeningClosingRoulette);
+                    lstbetRoulette = await _dbAcces._repository.BetRoulette.updateBetRoulette(idRoulette, idOpeningClosingRoulette);
+                    bool isOpen = await UpdateRoulette(idRoulette, false);
+                    if (isOpen)
+                    {
+                        _dbAcces.SaveChange();
+                    }
                 }
                 else
                 {
@@ -105,10 +118,18 @@ namespace RoulettePlay.Services.Businnes
             }
             catch (Exception ex)
             {
+                _dbAcces.DiscardChange();
                 throw new Exception(string.Format("Se presentó un error {0} al intentar cerrar la ruleta. ", ex.Message));
             }
-            return isOpen;
+
+            return lstbetRoulette;
         }
+        /// <summary>
+        /// Procedure for update roulette, this receive status fromo the others updates.
+        /// </summary>
+        /// <param name="idRoulette"></param>
+        /// <param name="rouletteState"></param>
+        /// <returns></returns>
         private async Task<bool> UpdateRoulette(int idRoulette, bool rouletteState)
         {
             bool isSuccesfull = false;
@@ -118,22 +139,16 @@ namespace RoulettePlay.Services.Businnes
                 Dictionary<string, object> lstParametros = new Dictionary<string, object>();
                 lstParametros.Add("@idRoulette", idRoulette);
                 lstParametros.Add("@rouletteState", rouletteState);
-                lstParametros.Add("@@updateType", 1);
+                lstParametros.Add("@updateType", 1);
                 _Result = await commandExecuteDBAsync("SP_ROULETTE_UPDATE", lstParametros, new SqlParameter() { ParameterName = "@Result", Value = _Result });
                 if (Convert.ToInt32(_Result) > 0)
                 {
-                    SaveChange();
                     isSuccesfull = true;
                 }
             }
             catch (Exception ex)
             {
-                DiscardChange();
                 throw ex;
-            }
-            finally
-            {
-                Dispose();
             }
 
             return isSuccesfull;
@@ -154,23 +169,19 @@ namespace RoulettePlay.Services.Businnes
                 lstParametros.Add("@idRoulette", idRoulette);
                 lstParametros.Add("@queryType", 2);
                 objRoulette = Utilities.MapObjectInstance<Roulette>(await commandExecuteDBAsync("SP_ROULETTE_READ", lstParametros)).FirstOrDefault();
-
-                return objRoulette;
             }
             catch (Exception ex)
             {
                 throw new Exception(string.Format("Se presentó un error {0} al consultar la ruleta {1}", ex.Message, idRoulette));
             }
-            finally
-            {
-                Dispose();
-            }
+
+            return objRoulette;
         }
         /// <summary>
         /// This function return the  list created roulettes 
         /// </summary>
         /// <returns></returns>
-        public async Task<List<Roulette>> ReadAllsync()
+        public async Task<List<Roulette>> ReadAllAsync()
         {
             List<Roulette> lstRoulette = new List<Roulette>();
             try
@@ -184,29 +195,49 @@ namespace RoulettePlay.Services.Businnes
             {
                 throw new Exception(string.Format("Se presentó un error {0} al consultar las ruletas", ex.Message));
             }
-            finally
-            {
-                Dispose();
-            }
         }
 
         #endregion        
         #endregion
         #region "Validations"
         /// <summary>
+        /// procedure to validate if a roulette exists
+        /// </summary>
+        /// <param name="idRoulette">roulette identifier</param>
+        /// <returns></returns>
+        public bool ValidateExistance(int idRoulette)
+        {
+            bool isExists = false;
+            try
+            {
+                Task<Roulette> objRoulette = null;
+                objRoulette = ReadByIdAsync(idRoulette);
+                if (objRoulette != null && objRoulette.Result != null && objRoulette.Result.idRoulette > 0)
+                {
+                    isExists = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+
+            return isExists;
+        }
+        /// <summary>
         /// This method is used for validate the roluette  status 
         /// </summary>
         /// <param name="idRoulette">input parameter, is a roulette identifier for open</param>
         /// <returns>roulette status</returns>
-        private bool ValidateRouletteStatus(int idRoulette)
+        public bool ValidateRouletteStatus(int idRoulette)
         {
             bool isOpen = false;
             try
             {
                 var objRoulette = ReadByIdAsync(idRoulette);
-                if (!(objRoulette is null) && objRoulette.Result.idRoulette > 0)
+                if (!(objRoulette.Result is null) && objRoulette.Result.idRoulette > 0)
                 {
-                    isOpen = true;
+                    isOpen = objRoulette.Result.rouletteState;
                 }
             }
             catch (Exception ex)
@@ -216,7 +247,34 @@ namespace RoulettePlay.Services.Businnes
 
             return isOpen;
         }
+        #endregion  
+        #region Auxiliaries
+        /// <summary>
+        /// method to get the opening identifier for roulette
+        /// </summary>
+        /// <param name="idRoulette">identifier roulette</param>
+        /// <returns></returns>
+        public int getOpenigHandle(int idRoulette)
+        {
+            int idOpeningClosingRoulette = 0;
+            try
+            {
+                var resul = _dbAcces._repository.openingClousingRoulete.ReadByIdAsync(idRoulette);
+                if (resul != null && resul.Result != null && resul.Result.idOpeningClosingRoulette > 0)
+                {
+                    idOpeningClosingRoulette = resul.Result.idOpeningClosingRoulette;
+                }
+                else
+                {
+                    throw new Exception(string.Format("No se logró obtener el identificador de la apertura de la ruleta.", idRoulette));
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+            return idOpeningClosingRoulette;
+        }
         #endregion
-
     }
 }

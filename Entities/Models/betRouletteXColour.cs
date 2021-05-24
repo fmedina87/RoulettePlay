@@ -8,6 +8,6 @@ namespace RoulettePlay.Entities.Models
     public class betRouletteXColour
     {        
         public int idBetRoulette { get; set; }
-        public int BetRouletteColour { get; set; }
+        public int BetRouletteColourCode { get; set; }
     }
 }

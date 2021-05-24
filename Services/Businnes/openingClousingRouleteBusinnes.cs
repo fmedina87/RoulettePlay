@@ -1,6 +1,7 @@
 ﻿using RoulettePlay.Entities.Models;
 using RoulettePlay.Services.DataBase;
 using RoulettePlay.Services.Interfaces.Businnes;
+using RoulettePlay.Services.Interfaces.DataBase;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
@@ -9,8 +10,15 @@ using System.Threading.Tasks;
 
 namespace RoulettePlay.Services.Businnes
 {
-    public class openingClousingRouleteBusinnes: DBAcces, IopeningClousingRoulete
+    public class openingClousingRouleteBusinnes: DBCommand, IopeningClousingRoulete
     {
+        private IDBAcces _dbAcces { get; }
+        public openingClousingRouleteBusinnes(IDBAcces dbAccess)
+        {
+            _context = dbAccess._context;
+            _transaction = dbAccess._transaction;
+            _dbAcces = dbAccess;
+        }
         #region Create
         /// <summary>
         /// this method is for create history opening and closing of the roulettes
@@ -30,7 +38,6 @@ namespace RoulettePlay.Services.Businnes
                 if (Convert.ToInt32(_Result) > 0)
                 {
                     idOpeningClousingRoulete = Convert.ToInt32(_Result);
-                    SaveChange();
                 }
                 else
                 {
@@ -51,7 +58,7 @@ namespace RoulettePlay.Services.Businnes
         /// </summary>
         /// <param name="idRoulette">roulette identifier</param>
         /// <returns>bolean value indicates if update succesfull</returns>
-        public async Task<bool> openingClosingRouleteUpdate(int idRoulette)
+        public async Task<bool> openingClosingRouleteUpdate(int idRoulette, int idOpeningClosingRoulette)
         {
             bool isUpdated = false;
             try
@@ -59,12 +66,12 @@ namespace RoulettePlay.Services.Businnes
                 string _Result = "";
                 Dictionary<string, object> lstParametros = new Dictionary<string, object>();
                 lstParametros.Add("@idRoulette", idRoulette);
+                lstParametros.Add("@idOpeningClosingRoulette", idOpeningClosingRoulette);
                 lstParametros.Add("@updateType", 1);               
                 _Result = await commandExecuteDBAsync("SP_OPENNINGCLOSINGROULETTE_UPDATE", lstParametros, new SqlParameter() { ParameterName = "@Result", Value = _Result });
                 if (Convert.ToInt32(_Result) > 0)
                 {
                     isUpdated = true;
-                    SaveChange();
                 }                              
             }
             catch (Exception ex)
@@ -90,17 +97,13 @@ namespace RoulettePlay.Services.Businnes
                 lstParametros.Add("@idRoulette", idRoulette);
                 lstParametros.Add("@queryType", 1);
                 objRoulette = Utilities.MapObjectInstance<openingClosingRoulette>(await commandExecuteDBAsync("SP_OPENINGCLOSINGROULETTE_READ", lstParametros)).FirstOrDefault();
-
-                return objRoulette;
             }
             catch (Exception ex)
             {
                 throw new Exception(string.Format("Se presentó un error {0} al consultar la ruleta {1}", ex.Message, idRoulette));
             }
-            finally
-            {
-                Dispose();
-            }
+           
+            return objRoulette;
         }
         #endregion
     }
